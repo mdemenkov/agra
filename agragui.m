@@ -106,9 +106,9 @@ classdef agragui < handle
 
          function show_ROA(sys)
          % Draws cross-section of ROA computed by numerical simulation
-             global agra_f;
+             global agra_f;agra_f=sys.main.f;
              
-             agra_f=sys.main.f;color='g';
+             color='g';
              
              [map,xticks,yticks]=Build_ROA(sys);
              m=length(yticks);
@@ -119,7 +119,7 @@ classdef agragui < handle
                         plot(xticks(j),yticks(i),[color 'o'],'LineWidth',2,...
                          'MarkerEdgeColor',color,...
                          'MarkerFaceColor',color,...
-                         'MarkerSize',10);drawnow;
+                         'MarkerSize',10);
                       end
                   end
             end
@@ -127,31 +127,33 @@ classdef agragui < handle
          
          function show_trajectory(sys)
          % Pick initial conditions on the plane and plot a trajectory
+         global agra_f; agra_f=sys.main.f;
+         
                [x_1,x_2]=ginput(1);
                [x,y]=traj(sys,x_1,x_2);plot(x,y,'b');
          end
          
          function flag=in_ROA(sys,x0)
          % IF final state in the box THEN this point belongs to ROA
-         WarningState=warning;warning off;
-        [TOUT,YOUT] = ode45(@eval_sys,[0 sys.T],x0);
-        warning(WarningState);
-        x_end=YOUT(end,:)';
-           if all(sys.xbox(:,1)<=x_end) && all(x_end<=sys.xbox(:,2))
-              flag=1;
-           else
-              flag=0;
-           end
+           WarningState=warning;warning off;
+           [TOUT,YOUT] = ode45(@eval_sys,[0 sys.T],x0);
+           warning(WarningState);
+           x_end=YOUT(end,:)';
+             if all(sys.xbox(:,1)<=x_end) && all(x_end<=sys.xbox(:,2))
+                flag=1;
+             else
+                flag=0;
+             end
          end
     
          function [x,y]=traj(sys,x0,y0)
-        % Computes single trajectory
-        WarningState=warning;warning off;
-        n=sys.main.n;
-        xvec=zeros(1,n);xvec(1,sys.x_i)=x0;xvec(1,sys.y_i)=y0;
-        [TOUT,YOUT] = ode45(@eval_sys,[0 sys.T],xvec);
-        warning(WarningState);
-        x=YOUT(:,1)';y=YOUT(:,2)';
+         % Computes single trajectory
+           WarningState=warning;warning off;
+           n=sys.main.n;
+           xvec=zeros(1,n);xvec(sys.x_i)=x0;xvec(sys.y_i)=y0;
+           [TOUT,YOUT] = ode45(@eval_sys,[0 sys.T],xvec);
+           warning(WarningState);
+           x=YOUT(:,sys.x_i)';y=YOUT(:,sys.y_i)';
          end
     
          function [map,x,y]=Build_ROA(sys)
@@ -202,7 +204,7 @@ classdef agragui < handle
                    X=zeros(length(y),length(x),n);
                    for i=1:length(y)
                        for j=1:length(x)
-                           xvec(1,sys.x_i)=x(j);xvec(1,sys.y_i)=y(i);
+                           xvec(sys.x_i)=x(j);xvec(sys.y_i)=y(i);
                            X(i,j,1:n)=xvec;
                        end
                   end
