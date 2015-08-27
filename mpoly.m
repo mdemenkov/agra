@@ -1,6 +1,6 @@
 classdef mpoly
    % Implement multivariate polynomial class
-   % Developer: Max Demenkov, Institute of Control Sciences, Moscow, May 2013 - March 2015
+   % Developer: Max Demenkov, Institute of Control Sciences, Moscow, May 2013 - July 2015
    % max.demenkov@gmail.com
    %
 
@@ -33,8 +33,32 @@ classdef mpoly
          end
         end
         
+        function  [cvec_out,pvec_out]=rmvsimilar(cvec_in,pvec_in)
+         % removes similar monomials
+         cvec_out=[];pvec_out=[];
+         cvec=cvec_in;pvec=pvec_in;
+          for i=1:length(cvec_in)
+              r=pvec_in(i,:);
+              if isempty(mpoly.findpowers(pvec_out,r))
+                 ind=mpoly.findpowers(pvec_in,r);
+                 pvec_out=[pvec_out;r];
+                 cvec_out=[cvec_out;sum(cvec_in(ind))];
+              end
+          end
+        end
+        
+         function ind=findpowers(P,r)
+                        [n,m]=size(P);
+                        ind=[];
+                        for k=1:n
+                            if all(P(k,:)==r)
+                               ind=[ind;k];
+                            end
+                        end
+        end
+            
         function  [cvec,pvec]=rmvzeros(cvec1,pvec1)
-                  rmconst=1e-10;% remove monomials less than that
+                  rmconst=1e-10;% removes monomials less than that
                   remlist=[];
                   for i=1:length(cvec1)
                       if abs(cvec1(i))>rmconst
@@ -54,6 +78,8 @@ classdef mpoly
                      case 2
                          if any(varargin{2}<0)
                             error('Negative powers');
+                         elseif ~all(round(varargin{2})==varargin{2})
+                            error('Powers should be integers');
                          else
                          [obj.cvec,obj.pvec]=mpoly.rmvzeros(varargin{1},...
                                                             varargin{2});
@@ -133,14 +159,17 @@ classdef mpoly
       end % minus
       
       function r=mpower(obj,p)
-      % Raises single monomial into power p 
-          if isa(obj,'mpoly') && isa(p,'double')
-             cvec=obj.cvec;pvec=obj.pvec;
-             if length(cvec)>1, error('Power error'); end
-             for i=1:length(pvec)
-                 pvec(i)=pvec(i)*p;
+      % Raises polynomial into power p 
+          if isa(obj,'mpoly') && isa(p,'double') && fix(p)==p && p>0
+              % power must be positive integer
+             if length(obj.cvec)>1
+                 r=obj;
+                 for i=1:p-1
+                     r=mtimes(r,obj);
+                 end
+             else % single monomial
+                 r=mpoly(obj.cvec,obj.pvec.*p);
              end
-             r=mpoly(cvec,pvec);
           else
                  error('Power error');
           end
@@ -167,8 +196,8 @@ classdef mpoly
                     pvec3(k,:)=pvec1(i,:)+pvec2(j,:);
                 end
             end
-            [cvec,pvec]=mpoly.dblentries(cvec3,pvec3,cvec3,pvec3);
-            r=mpoly(0.5*cvec,pvec);
+            [cvec_out,pvec_out]=mpoly.rmvsimilar(cvec3,pvec3);
+            r=mpoly(cvec_out,pvec_out);
         end
       end % mtimes
       
